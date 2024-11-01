@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-cd ../
 python main.py    --version 1\
                   --default_root_dir output \
                   --run train \
