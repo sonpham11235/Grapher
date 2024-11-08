@@ -26,31 +26,34 @@ def main(args):
     elif args.run == 'test':
         legacy_test(args, TB, checkpoint_model_path)
     else: # single inference
-        assert os.path.exists(checkpoint_model_path), 'Provided checkpoint does not exists, cannot do inference'
-
-        grapher = LitGrapher.load_from_checkpoint(checkpoint_path=checkpoint_model_path)
-
-        tokenizer = T5Tokenizer.from_pretrained(grapher.transformer_name, cache_dir=grapher.cache_dir)
-        tokenizer.add_tokens('__no_node__')
-        tokenizer.add_tokens('__no_edge__')
-        tokenizer.add_tokens('__node_sep__')
+        inference()
         
-        text_tok = tokenizer([args.inference_input_text],
-                             add_special_tokens=True,
-                             padding=True,
-                             return_tensors='pt')
+def inference(args, checkpoint_model_path):
+    assert os.path.exists(checkpoint_model_path), 'Provided checkpoint does not exists, cannot do inference'
 
-        text_input_ids, mask = text_tok['input_ids'], text_tok['attention_mask']
+    grapher = LitGrapher.load_from_checkpoint(checkpoint_path=checkpoint_model_path)
 
-        _, seq_nodes, _, seq_edges = grapher.model.sample(text_input_ids, mask)
+    tokenizer = T5Tokenizer.from_pretrained(grapher.transformer_name, cache_dir=grapher.cache_dir)
+    tokenizer.add_tokens('__no_node__')
+    tokenizer.add_tokens('__no_edge__')
+    tokenizer.add_tokens('__node_sep__')
+    
+    text_tok = tokenizer([args.inference_input_text],
+                            add_special_tokens=True,
+                            padding=True,
+                            return_tensors='pt')
 
-        dec_graph = decode_graph(tokenizer, grapher.edge_classes, seq_nodes, seq_edges, grapher.edges_as_classes,
-                                grapher.node_sep_id, grapher.max_nodes, grapher.noedge_cl, grapher.noedge_id,
-                                grapher.bos_token_id, grapher.eos_token_id)
-        
-        graph_str = ['-->'.join(tri) for tri in dec_graph[0]]
-        
-        print(f'Generated Graph: {graph_str}')
+    text_input_ids, mask = text_tok['input_ids'], text_tok['attention_mask']
+
+    _, seq_nodes, _, seq_edges = grapher.model.sample(text_input_ids, mask)
+
+    dec_graph = decode_graph(tokenizer, grapher.edge_classes, seq_nodes, seq_edges, grapher.edges_as_classes,
+                            grapher.node_sep_id, grapher.max_nodes, grapher.noedge_cl, grapher.noedge_id,
+                            grapher.bos_token_id, grapher.eos_token_id)
+    
+    graph_str = ['-->'.join(tri) for tri in dec_graph[0]]
+    
+    print(f'Generated Graph: {graph_str}')
 
 def legacy_train(args, TB):
     dm = GraphDataModule(tokenizer_class=T5Tokenizer,
