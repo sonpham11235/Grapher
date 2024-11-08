@@ -75,8 +75,9 @@ def main(args):
         if not os.path.exists(checkpoint_model_path):
             checkpoint_model_path = None
 
-
-        trainer = pl.Trainer(args, logger=TB, callbacks=[checkpoint_callback, RichProgressBar(10)])
+        trainer = pl.Trainer.from_argparse_args(args,
+                                                logger=TB,
+                                                callbacks=[checkpoint_callback, RichProgressBar(10)])
 
         dm.setup(stage='validate')
 
@@ -101,7 +102,7 @@ def main(args):
 
         dm.setup(stage='test')
 
-        trainer = pl.Trainer(args, logger=TB)
+        trainer = pl.Trainer.from_argparse_args(args, logger=TB)
 
         trainer.test(grapher, datamodule=dm)
 
@@ -162,7 +163,7 @@ if __name__ == "__main__":
     parser.add_argument("--inference_input_text", type=str,
                         default='Danielle Harris had a main role in Super Capers, a 98 minute long movie.')
 
-    # parser = pl.Trainer.add_argparse_args(parser)
+    parser = pl.Trainer.add_argparse_args(parser)
 
     args = parser.parse_args()
 
