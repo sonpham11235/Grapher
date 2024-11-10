@@ -12,6 +12,10 @@ def main(args):
     args.eval_dir = os.path.join(args.default_root_dir, args.dataset + '_version_' + args.version)
     args.checkpoint_dir = os.path.join(args.eval_dir, 'checkpoints')
 
+    print('-----------------------')
+    print(args)
+    print('-----------------------')
+
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     os.makedirs(os.path.join(args.eval_dir, 'valid'), exist_ok=True)
     os.makedirs(os.path.join(args.eval_dir, 'test'), exist_ok=True)
@@ -28,6 +32,7 @@ def main(args):
     else: # single inference
         inference()
         
+
 def inference(args, checkpoint_model_path):
     assert os.path.exists(checkpoint_model_path), 'Provided checkpoint does not exists, cannot do inference'
 
@@ -54,6 +59,7 @@ def inference(args, checkpoint_model_path):
     graph_str = ['-->'.join(tri) for tri in dec_graph[0]]
     
     print(f'Generated Graph: {graph_str}')
+
 
 def legacy_train(args, TB):
     dm = GraphDataModule(tokenizer_class=T5Tokenizer,
@@ -105,13 +111,31 @@ def legacy_train(args, TB):
     if not os.path.exists(checkpoint_model_path):
         checkpoint_model_path = None
 
-    trainer = pl.Trainer.from_argparse_args(args,
-                                            logger=TB,
-                                            callbacks=[checkpoint_callback, RichProgressBar(10)])
+    # trainer = pl.Trainer.from_argparse_args(args,
+    #                                         logger=TB,
+    #                                         callbacks=[checkpoint_callback, RichProgressBar(10)])
+    
+    trainer = pl.Trainer(logger=TB,
+                         callbacks=[checkpoint_callback, RichProgressBar(10)],
+                         default_root_dir=args.default_root_dir,
+                         max_epochs=args.max_epochs,
+                         accelerator=args.accelerator,
+                         num_nodes=args.num_nodes,
+                         num_sanity_val_steps=args.num_sanity_val_steps,
+                         fast_dev_run=args.fast_dev_run,
+                         overfit_batches=args.overfit_batches,
+                         limit_train_batches=args.limit_train_batches,
+                         limit_val_batches=args.limit_val_batches,
+                         limit_test_batches=args.limit_test_batches,
+                         accumulate_grad_batches=args.accumulate_grad_batches,
+                         detect_anomaly=args.detect_anomaly,
+                         val_check_interval=args.val_check_interval
+                        )
 
     dm.setup(stage='validate')
 
     trainer.fit(model=grapher, datamodule=dm, ckpt_path=checkpoint_model_path)
+
 
 def legacy_test(args, TB, checkpoint_model_path):
     assert os.path.exists(checkpoint_model_path), 'Provided checkpoint does not exists, cannot run the test'
@@ -130,8 +154,22 @@ def legacy_test(args, TB, checkpoint_model_path):
 
     dm.setup(stage='test')
 
-    trainer = pl.Trainer.from_argparse_args(args, logger=TB)
+    trainer = pl.Trainer(logger=TB,
+                        default_root_dir=args.default_root_dir,
+                        max_epochs=args.max_epochs,
+                        accelerator=args.accelerator,
+                        num_nodes=args.num_nodes,
+                        num_sanity_val_steps=args.num_sanity_val_steps,
+                        fast_dev_run=args.fast_dev_run,
+                        overfit_batches=args.overfit_batches,
+                        limit_train_batches=args.limit_train_batches,
+                        limit_val_batches=args.limit_val_batches,
+                        limit_test_batches=args.limit_test_batches,
+                        accumulate_grad_batches=args.accumulate_grad_batches,
+                        detect_anomaly=args.detect_anomaly,
+                        val_check_interval=args.val_check_interval)
     trainer.test(grapher, datamodule=dm)
+
 
 if __name__ == "__main__":
     
@@ -161,7 +199,7 @@ if __name__ == "__main__":
     parser.add_argument("--inference_input_text", type=str,
                         default='Danielle Harris had a main role in Super Capers, a 98 minute long movie.')
 
-    parser = pl.Trainer.add_argparse_args(parser)
+    # parser = pl.Trainer.add_argparse_args(parser)
 
     args = parser.parse_args()
 
