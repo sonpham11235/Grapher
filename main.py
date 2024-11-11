@@ -26,11 +26,11 @@ def main(args):
         checkpoint_model_path = os.path.join(args.checkpoint_dir, f"model-step={args.checkpoint_model_id}.ckpt")
 
     if args.run == 'train':
-        legacy_train(args, TB)
+        legacy_train(args, TB, checkpoint_model_path)
     elif args.run == 'test':
         legacy_test(args, TB, checkpoint_model_path)
     else: # single inference
-        inference()
+        inference(args, checkpoint_model_path)
         
 
 def inference(args, checkpoint_model_path):
@@ -61,7 +61,7 @@ def inference(args, checkpoint_model_path):
     print(f'Generated Graph: {graph_str}')
 
 
-def legacy_train(args, TB):
+def legacy_train(args, TB, checkpoint_model_path):
     dm = GraphDataModule(tokenizer_class=T5Tokenizer,
                             tokenizer_name=args.pretrained_model,
                             cache_dir=args.cache_dir,
