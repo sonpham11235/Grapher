@@ -177,6 +177,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Arguments')
 
     parser.add_argument("--default_root_dir", type=str, default='output')
+    parser.add_argument("--accelerator", type=str, default='gpu')
     parser.add_argument("--max_epochs", type=str, default=100)
     parser.add_argument("--num_nodes", type=str, default=1)
     parser.add_argument("--num_sanity_val_steps", type=str, default=0)
